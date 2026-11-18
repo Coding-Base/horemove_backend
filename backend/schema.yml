@@ -1,0 +1,5773 @@
+openapi: 3.0.3
+info:
+  title: HOREMOW REST API
+  version: 1.0.0
+  description: Authoritative backend for Holiness Revival Movement Worldwide public
+    site and admin portal.
+paths:
+  /api/v1/audit/:
+    get:
+      operationId: audit_list
+      description: |-
+        Read-only audit log endpoint for security and compliance audits.
+        Strictly limited to SuperAdmin.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - audit
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/v1/audit/{id}/:
+    get:
+      operationId: audit_retrieve
+      description: |-
+        Read-only audit log endpoint for security and compliance audits.
+        Strictly limited to SuperAdmin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this Audit Log Entry.
+        required: true
+      tags:
+      - audit
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefresh'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/auth/users/:
+    get:
+      operationId: auth_users_list
+      description: 'Sub-admin provisioning: strictly guarded by SuperAdmin privileges.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedUserList'
+          description: ''
+    post:
+      operationId: auth_users_create
+      description: 'Sub-admin provisioning: strictly guarded by SuperAdmin privileges.'
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAdminCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserAdminCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserAdminCreateUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAdminCreateUpdate'
+          description: ''
+  /api/v1/auth/users/{id}/:
+    get:
+      operationId: auth_users_retrieve
+      description: 'Sub-admin provisioning: strictly guarded by SuperAdmin privileges.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    put:
+      operationId: auth_users_update
+      description: 'Sub-admin provisioning: strictly guarded by SuperAdmin privileges.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserAdminCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserAdminCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserAdminCreateUpdate'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAdminCreateUpdate'
+          description: ''
+    patch:
+      operationId: auth_users_partial_update
+      description: 'Sub-admin provisioning: strictly guarded by SuperAdmin privileges.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserAdminCreateUpdate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserAdminCreateUpdate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserAdminCreateUpdate'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAdminCreateUpdate'
+          description: ''
+    delete:
+      operationId: auth_users_destroy
+      description: 'Sub-admin provisioning: strictly guarded by SuperAdmin privileges.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this User.
+        required: true
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/contact/inquiries/:
+    get:
+      operationId: contact_inquiries_list
+      description: Inquiry management for administrators.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - contact
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContactSubmissionAdminList'
+          description: ''
+    post:
+      operationId: contact_inquiries_create
+      description: Inquiry management for administrators.
+      tags:
+      - contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionAdmin'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionAdmin'
+          description: ''
+  /api/v1/contact/inquiries/{id}/:
+    get:
+      operationId: contact_inquiries_retrieve
+      description: Inquiry management for administrators.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this contact submission.
+        required: true
+      tags:
+      - contact
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionAdmin'
+          description: ''
+    put:
+      operationId: contact_inquiries_update
+      description: Inquiry management for administrators.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this contact submission.
+        required: true
+      tags:
+      - contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ContactSubmissionAdmin'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionAdmin'
+          description: ''
+    patch:
+      operationId: contact_inquiries_partial_update
+      description: Inquiry management for administrators.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this contact submission.
+        required: true
+      tags:
+      - contact
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContactSubmissionAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContactSubmissionAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContactSubmissionAdmin'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactSubmissionAdmin'
+          description: ''
+    delete:
+      operationId: contact_inquiries_destroy
+      description: Inquiry management for administrators.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this contact submission.
+        required: true
+      tags:
+      - contact
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/contact/submit/:
+    post:
+      operationId: contact_submit_create
+      tags:
+      - contact
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/devotionals/:
+    get:
+      operationId: devotionals_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - devotionals
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDevotionalList'
+          description: ''
+    post:
+      operationId: devotionals_create
+      tags:
+      - devotionals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Devotional'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Devotional'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Devotional'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Devotional'
+          description: ''
+  /api/v1/devotionals/{date}/:
+    get:
+      operationId: devotionals_retrieve
+      parameters:
+      - in: path
+        name: date
+        schema:
+          type: string
+          format: date
+        required: true
+      tags:
+      - devotionals
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Devotional'
+          description: ''
+    put:
+      operationId: devotionals_update
+      parameters:
+      - in: path
+        name: date
+        schema:
+          type: string
+          format: date
+        required: true
+      tags:
+      - devotionals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Devotional'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Devotional'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Devotional'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Devotional'
+          description: ''
+    patch:
+      operationId: devotionals_partial_update
+      parameters:
+      - in: path
+        name: date
+        schema:
+          type: string
+          format: date
+        required: true
+      tags:
+      - devotionals
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDevotional'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDevotional'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDevotional'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Devotional'
+          description: ''
+    delete:
+      operationId: devotionals_destroy
+      parameters:
+      - in: path
+        name: date
+        schema:
+          type: string
+          format: date
+        required: true
+      tags:
+      - devotionals
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/devotionals/today/:
+    get:
+      operationId: devotionals_today_retrieve
+      tags:
+      - devotionals
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/donations/admin/transactions/:
+    get:
+      operationId: donations_admin_transactions_list
+      description: 'Finance audit ledger: strictly gated to Finance Auditors and SuperAdmins.'
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDonationTransactionAdminList'
+          description: ''
+  /api/v1/donations/admin/transactions/{id}/:
+    get:
+      operationId: donations_admin_transactions_retrieve
+      description: 'Finance audit ledger: strictly gated to Finance Auditors and SuperAdmins.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this donation transaction.
+        required: true
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationTransactionAdmin'
+          description: ''
+  /api/v1/donations/checkout/:
+    post:
+      operationId: donations_checkout_create
+      description: |-
+        Server-authoritative checkout initiation.
+        Creates a pending transaction with unique reference & idempotency key.
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/donations/projects/:
+    get:
+      operationId: donations_projects_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDonationProjectList'
+          description: ''
+    post:
+      operationId: donations_projects_create
+      tags:
+      - donations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonationProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DonationProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DonationProject'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationProject'
+          description: ''
+  /api/v1/donations/projects/{slug}/:
+    get:
+      operationId: donations_projects_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationProject'
+          description: ''
+    put:
+      operationId: donations_projects_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - donations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DonationProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DonationProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DonationProject'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationProject'
+          description: ''
+    patch:
+      operationId: donations_projects_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - donations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDonationProject'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDonationProject'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDonationProject'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DonationProject'
+          description: ''
+    delete:
+      operationId: donations_projects_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/donations/webhooks/paypal/:
+    post:
+      operationId: donations_webhooks_paypal_create
+      description: PayPal Webhook Endpoint for payment capture verification.
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/donations/webhooks/paystack/:
+    post:
+      operationId: donations_webhooks_paystack_create
+      description: Paystack Webhook Endpoint with strict HMAC-SHA512 verification.
+      tags:
+      - donations
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/events/:
+    get:
+      operationId: events_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEventList'
+          description: ''
+    post:
+      operationId: events_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Event'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Event'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/v1/events/{slug}/:
+    get:
+      operationId: events_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    put:
+      operationId: events_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Event'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Event'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    patch:
+      operationId: events_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    delete:
+      operationId: events_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - events
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/health/:
+    get:
+      operationId: health_retrieve
+      description: |-
+        Lightweight health check probe for load balancers.
+        Reveals zero infrastructure or secret details.
+      tags:
+      - health
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/locations/:
+    get:
+      operationId: locations_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFellowshipList'
+          description: ''
+    post:
+      operationId: locations_create
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fellowship'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fellowship'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fellowship'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fellowship'
+          description: ''
+  /api/v1/locations/{id}/:
+    get:
+      operationId: locations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this fellowship.
+        required: true
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fellowship'
+          description: ''
+    put:
+      operationId: locations_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this fellowship.
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Fellowship'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Fellowship'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Fellowship'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fellowship'
+          description: ''
+    patch:
+      operationId: locations_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this fellowship.
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFellowship'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedFellowship'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedFellowship'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Fellowship'
+          description: ''
+    delete:
+      operationId: locations_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this fellowship.
+        required: true
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/locations/regions/:
+    get:
+      operationId: locations_regions_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRegionList'
+          description: ''
+    post:
+      operationId: locations_regions_create
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Region'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Region'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Region'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Region'
+          description: ''
+  /api/v1/locations/regions/{id}/:
+    get:
+      operationId: locations_regions_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this region.
+        required: true
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Region'
+          description: ''
+    put:
+      operationId: locations_regions_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this region.
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Region'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Region'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Region'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Region'
+          description: ''
+    patch:
+      operationId: locations_regions_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this region.
+        required: true
+      tags:
+      - locations
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRegion'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedRegion'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedRegion'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Region'
+          description: ''
+    delete:
+      operationId: locations_regions_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this region.
+        required: true
+      tags:
+      - locations
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/media/assets/:
+    get:
+      operationId: media_assets_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMediaAssetList'
+          description: ''
+    post:
+      operationId: media_assets_create
+      tags:
+      - media
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MediaAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MediaAsset'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+  /api/v1/media/assets/{id}/:
+    get:
+      operationId: media_assets_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this media asset.
+        required: true
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    put:
+      operationId: media_assets_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this media asset.
+        required: true
+      tags:
+      - media
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MediaAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MediaAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MediaAsset'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    patch:
+      operationId: media_assets_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this media asset.
+        required: true
+      tags:
+      - media
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMediaAsset'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMediaAsset'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMediaAsset'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MediaAsset'
+          description: ''
+    delete:
+      operationId: media_assets_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this media asset.
+        required: true
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/media/sign-upload/:
+    post:
+      operationId: media_sign_upload_create
+      description: |-
+        Generates a secure, temporary Cloudinary signed upload signature.
+        Allows frontend to upload directly to Cloudinary without exposing API Secret.
+      tags:
+      - media
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/ministry/doctrine/:
+    get:
+      operationId: ministry_doctrine_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDoctrineList'
+          description: ''
+    post:
+      operationId: ministry_doctrine_create
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctrine'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Doctrine'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Doctrine'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctrine'
+          description: ''
+  /api/v1/ministry/doctrine/{id}/:
+    get:
+      operationId: ministry_doctrine_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this doctrine.
+        required: true
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctrine'
+          description: ''
+    put:
+      operationId: ministry_doctrine_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this doctrine.
+        required: true
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctrine'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Doctrine'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Doctrine'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctrine'
+          description: ''
+    patch:
+      operationId: ministry_doctrine_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this doctrine.
+        required: true
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctrine'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctrine'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctrine'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctrine'
+          description: ''
+    delete:
+      operationId: ministry_doctrine_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this doctrine.
+        required: true
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/ministry/homepage-sections/:
+    get:
+      operationId: ministry_homepage_sections_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedHomepageSectionList'
+          description: ''
+    post:
+      operationId: ministry_homepage_sections_create
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomepageSection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HomepageSection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HomepageSection'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageSection'
+          description: ''
+  /api/v1/ministry/homepage-sections/{section_key}/:
+    get:
+      operationId: ministry_homepage_sections_retrieve
+      parameters:
+      - in: path
+        name: section_key
+        schema:
+          type: string
+        required: true
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageSection'
+          description: ''
+    put:
+      operationId: ministry_homepage_sections_update
+      parameters:
+      - in: path
+        name: section_key
+        schema:
+          type: string
+        required: true
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomepageSection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/HomepageSection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/HomepageSection'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageSection'
+          description: ''
+    patch:
+      operationId: ministry_homepage_sections_partial_update
+      parameters:
+      - in: path
+        name: section_key
+        schema:
+          type: string
+        required: true
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedHomepageSection'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedHomepageSection'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedHomepageSection'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomepageSection'
+          description: ''
+    delete:
+      operationId: ministry_homepage_sections_destroy
+      parameters:
+      - in: path
+        name: section_key
+        schema:
+          type: string
+        required: true
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/ministry/leaders/:
+    get:
+      operationId: ministry_leaders_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedLeaderList'
+          description: ''
+    post:
+      operationId: ministry_leaders_create
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Leader'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Leader'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Leader'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leader'
+          description: ''
+  /api/v1/ministry/leaders/{id}/:
+    get:
+      operationId: ministry_leaders_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this leader.
+        required: true
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leader'
+          description: ''
+    put:
+      operationId: ministry_leaders_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this leader.
+        required: true
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Leader'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Leader'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Leader'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leader'
+          description: ''
+    patch:
+      operationId: ministry_leaders_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this leader.
+        required: true
+      tags:
+      - ministry
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLeader'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLeader'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLeader'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Leader'
+          description: ''
+    delete:
+      operationId: ministry_leaders_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this leader.
+        required: true
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/ministry/profile/:
+    get:
+      operationId: ministry_profile_retrieve
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    put:
+      operationId: ministry_profile_update
+      tags:
+      - ministry
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/posts/:
+    get:
+      operationId: posts_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPostList'
+          description: ''
+    post:
+      operationId: posts_create
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Post'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Post'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+  /api/v1/posts/{slug}/:
+    get:
+      operationId: posts_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+    put:
+      operationId: posts_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Post'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Post'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+    patch:
+      operationId: posts_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPost'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPost'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPost'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+    delete:
+      operationId: posts_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/posts/{slug}/comments/:
+    post:
+      operationId: posts_comments_create
+      description: 'Public comment submission: strictly throttled, defaults to PENDING
+        moderation.'
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Post'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Post'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Post'
+        required: true
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+          description: ''
+  /api/v1/posts/categories/:
+    get:
+      operationId: posts_categories_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPostCategoryList'
+          description: ''
+    post:
+      operationId: posts_categories_create
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+          description: ''
+  /api/v1/posts/categories/{slug}/:
+    get:
+      operationId: posts_categories_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+          description: ''
+    put:
+      operationId: posts_categories_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PostCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PostCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+          description: ''
+    patch:
+      operationId: posts_categories_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPostCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPostCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPostCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostCategory'
+          description: ''
+    delete:
+      operationId: posts_categories_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/posts/moderation/comments/:
+    get:
+      operationId: posts_moderation_comments_list
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCommentAdminList'
+          description: ''
+    post:
+      operationId: posts_moderation_comments_create
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentAdmin'
+          description: ''
+  /api/v1/posts/moderation/comments/{id}/:
+    get:
+      operationId: posts_moderation_comments_retrieve
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this comment.
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentAdmin'
+          description: ''
+    put:
+      operationId: posts_moderation_comments_update
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this comment.
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentAdmin'
+          description: ''
+    patch:
+      operationId: posts_moderation_comments_partial_update
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this comment.
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCommentAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCommentAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCommentAdmin'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentAdmin'
+          description: ''
+    delete:
+      operationId: posts_moderation_comments_destroy
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this comment.
+        required: true
+      tags:
+      - posts
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/posts/moderation/comments/{id}/approve/:
+    post:
+      operationId: posts_moderation_comments_approve_create
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this comment.
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentAdmin'
+          description: ''
+  /api/v1/posts/moderation/comments/{id}/reject/:
+    post:
+      operationId: posts_moderation_comments_reject_create
+      description: 'Moderation queue: strictly restricted to admin/moderator roles.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this comment.
+        required: true
+      tags:
+      - posts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CommentAdmin'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentAdmin'
+          description: ''
+  /api/v1/publications/:
+    get:
+      operationId: publications_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - publications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPublicationList'
+          description: ''
+    post:
+      operationId: publications_create
+      tags:
+      - publications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Publication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Publication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Publication'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+          description: ''
+  /api/v1/publications/{slug}/:
+    get:
+      operationId: publications_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+          description: ''
+    put:
+      operationId: publications_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Publication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Publication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Publication'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+          description: ''
+    patch:
+      operationId: publications_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPublication'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPublication'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPublication'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Publication'
+          description: ''
+    delete:
+      operationId: publications_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/publications/categories/:
+    get:
+      operationId: publications_categories_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - publications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPublicationCategoryList'
+          description: ''
+    post:
+      operationId: publications_categories_create
+      tags:
+      - publications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicationCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicationCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationCategory'
+          description: ''
+  /api/v1/publications/categories/{slug}/:
+    get:
+      operationId: publications_categories_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationCategory'
+          description: ''
+    put:
+      operationId: publications_categories_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicationCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicationCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationCategory'
+          description: ''
+    patch:
+      operationId: publications_categories_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPublicationCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPublicationCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPublicationCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicationCategory'
+          description: ''
+    delete:
+      operationId: publications_categories_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - publications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/ready/:
+    get:
+      operationId: ready_retrieve
+      description: Readiness check verifying database connectivity.
+      tags:
+      - ready
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sermons/:
+    get:
+      operationId: sermons_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSermonList'
+          description: ''
+    post:
+      operationId: sermons_create
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sermon'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sermon'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sermon'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sermon'
+          description: ''
+  /api/v1/sermons/{slug}/:
+    get:
+      operationId: sermons_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sermon'
+          description: ''
+    put:
+      operationId: sermons_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sermon'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sermon'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sermon'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sermon'
+          description: ''
+    patch:
+      operationId: sermons_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSermon'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSermon'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSermon'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sermon'
+          description: ''
+    delete:
+      operationId: sermons_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/sermons/categories/:
+    get:
+      operationId: sermons_categories_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSermonCategoryList'
+          description: ''
+    post:
+      operationId: sermons_categories_create
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SermonCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SermonCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SermonCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SermonCategory'
+          description: ''
+  /api/v1/sermons/categories/{slug}/:
+    get:
+      operationId: sermons_categories_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SermonCategory'
+          description: ''
+    put:
+      operationId: sermons_categories_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SermonCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SermonCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SermonCategory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SermonCategory'
+          description: ''
+    patch:
+      operationId: sermons_categories_partial_update
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSermonCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSermonCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSermonCategory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SermonCategory'
+          description: ''
+    delete:
+      operationId: sermons_categories_destroy
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/sermons/speakers/:
+    get:
+      operationId: sermons_speakers_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSpeakerList'
+          description: ''
+    post:
+      operationId: sermons_speakers_create
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Speaker'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Speaker'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Speaker'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+          description: ''
+  /api/v1/sermons/speakers/{id}/:
+    get:
+      operationId: sermons_speakers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this speaker.
+        required: true
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+          description: ''
+    put:
+      operationId: sermons_speakers_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this speaker.
+        required: true
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Speaker'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Speaker'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Speaker'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+          description: ''
+    patch:
+      operationId: sermons_speakers_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this speaker.
+        required: true
+      tags:
+      - sermons
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSpeaker'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSpeaker'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSpeaker'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Speaker'
+          description: ''
+    delete:
+      operationId: sermons_speakers_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this speaker.
+        required: true
+      tags:
+      - sermons
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - CREATE
+      - UPDATE
+      - DELETE
+      - PUBLISH
+      - ARCHIVE
+      - EXPORT
+      - LOGIN_FAILED
+      type: string
+      description: |-
+        * `CREATE` - Create Resource
+        * `UPDATE` - Update Resource
+        * `DELETE` - Delete Resource
+        * `PUBLISH` - Publish Resource
+        * `ARCHIVE` - Archive Resource
+        * `EXPORT` - Export Records
+        * `LOGIN_FAILED` - Failed Login
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+        actor_email:
+          type: string
+          format: email
+          readOnly: true
+        ip_address:
+          type: string
+          readOnly: true
+          nullable: true
+        action:
+          allOf:
+          - $ref: '#/components/schemas/ActionEnum'
+          readOnly: true
+        resource_type:
+          type: string
+          readOnly: true
+        resource_id:
+          type: string
+          readOnly: true
+        details:
+          readOnly: true
+        request_id:
+          type: string
+          readOnly: true
+      required:
+      - action
+      - actor_email
+      - details
+      - id
+      - ip_address
+      - request_id
+      - resource_id
+      - resource_type
+      - timestamp
+    CommentAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        post_title:
+          type: string
+          readOnly: true
+        author_name:
+          type: string
+          maxLength: 150
+        author_email:
+          type: string
+          format: email
+          maxLength: 254
+        content:
+          type: string
+        status:
+          $ref: '#/components/schemas/CommentAdminStatusEnum'
+        ip_address:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        post:
+          type: string
+          format: uuid
+      required:
+      - author_email
+      - author_name
+      - content
+      - created_at
+      - id
+      - post
+      - post_title
+    CommentAdminStatusEnum:
+      enum:
+      - PENDING
+      - APPROVED
+      - REJECTED
+      - FLAGGED
+      type: string
+      description: |-
+        * `PENDING` - Pending Moderation
+        * `APPROVED` - Approved
+        * `REJECTED` - Rejected
+        * `FLAGGED` - Flagged
+    ContactSubmissionAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 64
+        subject:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        is_resolved:
+          type: boolean
+        resolution_notes:
+          type: string
+        ip_address:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - message
+      - name
+      - subject
+    Devotional:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        date:
+          type: string
+          format: date
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        scripture_reading:
+          type: string
+          maxLength: 255
+        memory_verse_text:
+          type: string
+        memory_verse_reference:
+          type: string
+          maxLength: 255
+        reflection_body:
+          type: string
+        prayer_points: {}
+        action_point:
+          type: string
+        author_attribution:
+          type: string
+          maxLength: 255
+        image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_audio_available:
+          type: boolean
+        audio_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - created_at
+      - date
+      - id
+      - memory_verse_reference
+      - memory_verse_text
+      - reflection_body
+      - scripture_reading
+      - slug
+      - title
+      - updated_at
+    Doctrine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        biblical_reference:
+          type: string
+          maxLength: 500
+        summary:
+          type: string
+        full_text:
+          type: string
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - biblical_reference
+      - created_at
+      - id
+      - summary
+      - title
+      - updated_at
+    DonationProject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          maxLength: 3
+        is_active:
+          type: boolean
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - description
+      - id
+      - name
+      - slug
+    DonationTransactionAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        project:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        project_name:
+          type: string
+          readOnly: true
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        currency:
+          type: string
+          readOnly: true
+        donor_name:
+          type: string
+          readOnly: true
+        donor_email:
+          type: string
+          format: email
+          readOnly: true
+        donor_phone:
+          type: string
+          readOnly: true
+        is_anonymous:
+          type: boolean
+          readOnly: true
+        provider:
+          allOf:
+          - $ref: '#/components/schemas/ProviderEnum'
+          readOnly: true
+        provider_reference:
+          type: string
+          readOnly: true
+        idempotency_key:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/DonationTransactionAdminStatusEnum'
+          readOnly: true
+        appreciation_email_sent:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - amount
+      - appreciation_email_sent
+      - completed_at
+      - created_at
+      - currency
+      - donor_email
+      - donor_name
+      - donor_phone
+      - id
+      - idempotency_key
+      - is_anonymous
+      - project
+      - project_name
+      - provider
+      - provider_reference
+      - status
+    DonationTransactionAdminStatusEnum:
+      enum:
+      - PENDING
+      - SUCCESSFUL
+      - FAILED
+      - CANCELLED
+      type: string
+      description: |-
+        * `PENDING` - Pending
+        * `SUCCESSFUL` - Successful
+        * `FAILED` - Failed
+        * `CANCELLED` - Cancelled
+    Event:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        theme:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        start_datetime:
+          type: string
+          format: date-time
+        end_datetime:
+          type: string
+          format: date-time
+        timezone_name:
+          type: string
+          maxLength: 64
+        is_online:
+          type: boolean
+        is_in_person:
+          type: boolean
+        stream_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        venue_name:
+          type: string
+          maxLength: 255
+        venue_address:
+          type: string
+        venue_coordinates: {}
+        registration_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        banner_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_featured:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - created_at
+      - description
+      - end_datetime
+      - id
+      - slug
+      - start_datetime
+      - title
+      - updated_at
+    Fellowship:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        continent:
+          type: string
+          readOnly: true
+        country:
+          type: string
+          readOnly: true
+        state_or_province:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        city_or_lga:
+          type: string
+          maxLength: 150
+        address:
+          type: string
+        meeting_schedule:
+          type: string
+        contact_person:
+          type: string
+          maxLength: 150
+        contact_phone:
+          type: string
+          maxLength: 64
+        contact_email:
+          type: string
+          format: email
+          maxLength: 254
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        region:
+          type: string
+          format: uuid
+      required:
+      - address
+      - city_or_lga
+      - continent
+      - country
+      - created_at
+      - id
+      - meeting_schedule
+      - name
+      - region
+      - state_or_province
+      - updated_at
+    HomepageSection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        section_key:
+          type: string
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+          maxLength: 500
+        content_payload: {}
+        is_active:
+          type: boolean
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - section_key
+      - title
+      - updated_at
+    Leader:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        biography:
+          type: string
+        portrait_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - biography
+      - created_at
+      - id
+      - name
+      - title
+      - updated_at
+    MediaAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        public_id:
+          type: string
+          maxLength: 255
+        secure_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        resource_type:
+          type: string
+          maxLength: 32
+        format:
+          type: string
+          maxLength: 16
+        width:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        height:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        bytes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        title:
+          type: string
+          maxLength: 255
+        alt_text:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        uploaded_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - id
+      - public_id
+      - secure_url
+      - uploaded_by
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
+    PaginatedCommentAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentAdmin'
+    PaginatedContactSubmissionAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactSubmissionAdmin'
+    PaginatedDevotionalList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Devotional'
+    PaginatedDoctrineList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Doctrine'
+    PaginatedDonationProjectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DonationProject'
+    PaginatedDonationTransactionAdminList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DonationTransactionAdmin'
+    PaginatedEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+    PaginatedFellowshipList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Fellowship'
+    PaginatedHomepageSectionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/HomepageSection'
+    PaginatedLeaderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Leader'
+    PaginatedMediaAssetList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAsset'
+    PaginatedPostCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostCategory'
+    PaginatedPostList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+    PaginatedPublicationCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicationCategory'
+    PaginatedPublicationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Publication'
+    PaginatedRegionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Region'
+    PaginatedSermonCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SermonCategory'
+    PaginatedSermonList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sermon'
+    PaginatedSpeakerList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Speaker'
+    PaginatedUserList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    PatchedCommentAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        post_title:
+          type: string
+          readOnly: true
+        author_name:
+          type: string
+          maxLength: 150
+        author_email:
+          type: string
+          format: email
+          maxLength: 254
+        content:
+          type: string
+        status:
+          $ref: '#/components/schemas/CommentAdminStatusEnum'
+        ip_address:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        post:
+          type: string
+          format: uuid
+    PatchedContactSubmissionAdmin:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        phone:
+          type: string
+          maxLength: 64
+        subject:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        is_resolved:
+          type: boolean
+        resolution_notes:
+          type: string
+        ip_address:
+          type: string
+          nullable: true
+        user_agent:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedDevotional:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        date:
+          type: string
+          format: date
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        scripture_reading:
+          type: string
+          maxLength: 255
+        memory_verse_text:
+          type: string
+        memory_verse_reference:
+          type: string
+          maxLength: 255
+        reflection_body:
+          type: string
+        prayer_points: {}
+        action_point:
+          type: string
+        author_attribution:
+          type: string
+          maxLength: 255
+        image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_audio_available:
+          type: boolean
+        audio_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedDoctrine:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        biblical_reference:
+          type: string
+          maxLength: 500
+        summary:
+          type: string
+        full_text:
+          type: string
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedDonationProject:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          maxLength: 3
+        is_active:
+          type: boolean
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+    PatchedEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        theme:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        start_datetime:
+          type: string
+          format: date-time
+        end_datetime:
+          type: string
+          format: date-time
+        timezone_name:
+          type: string
+          maxLength: 64
+        is_online:
+          type: boolean
+        is_in_person:
+          type: boolean
+        stream_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        venue_name:
+          type: string
+          maxLength: 255
+        venue_address:
+          type: string
+        venue_coordinates: {}
+        registration_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        banner_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_featured:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedFellowship:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        continent:
+          type: string
+          readOnly: true
+        country:
+          type: string
+          readOnly: true
+        state_or_province:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        city_or_lga:
+          type: string
+          maxLength: 150
+        address:
+          type: string
+        meeting_schedule:
+          type: string
+        contact_person:
+          type: string
+          maxLength: 150
+        contact_phone:
+          type: string
+          maxLength: 64
+        contact_email:
+          type: string
+          format: email
+          maxLength: 254
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+          nullable: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        region:
+          type: string
+          format: uuid
+    PatchedHomepageSection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        section_key:
+          type: string
+          maxLength: 64
+          pattern: ^[-a-zA-Z0-9_]+$
+        title:
+          type: string
+          maxLength: 255
+        subtitle:
+          type: string
+          maxLength: 500
+        content_payload: {}
+        is_active:
+          type: boolean
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedLeader:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        biography:
+          type: string
+        portrait_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        order:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedMediaAsset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        public_id:
+          type: string
+          maxLength: 255
+        secure_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        resource_type:
+          type: string
+          maxLength: 32
+        format:
+          type: string
+          maxLength: 16
+        width:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        height:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        bytes:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        title:
+          type: string
+          maxLength: 255
+        alt_text:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        uploaded_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+    PatchedPost:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        comments:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        author_name:
+          type: string
+          maxLength: 255
+        excerpt:
+          type: string
+        body_markdown:
+          type: string
+        cover_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_featured:
+          type: boolean
+        view_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedPostCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          maxLength: 160
+          pattern: ^[-a-zA-Z0-9_]+$
+    PatchedPublication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        author:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        isbn:
+          type: string
+          maxLength: 32
+        language:
+          type: string
+          maxLength: 64
+        cover_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        preview_pdf_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        purchase_enquiry_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_available:
+          type: boolean
+        is_featured:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedPublicationCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          maxLength: 160
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+    PatchedRegion:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        continent:
+          type: string
+          maxLength: 64
+        country:
+          type: string
+          maxLength: 100
+        state_or_province:
+          type: string
+          maxLength: 100
+    PatchedSermon:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        speaker_name:
+          type: string
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        date_preached:
+          type: string
+          format: date
+        summary:
+          type: string
+        scripture_references:
+          type: string
+          maxLength: 255
+        audio_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        video_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        telegram_download_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        thumbnail_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        duration_seconds:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_featured:
+          type: boolean
+        view_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        speaker:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          type: string
+          format: uuid
+          nullable: true
+    PatchedSermonCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          maxLength: 160
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+    PatchedSpeaker:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        bio:
+          type: string
+        portrait_url:
+          type: string
+          format: uri
+          maxLength: 1000
+    PatchedUserAdminCreateUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        capabilities: {}
+        is_active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+          minLength: 10
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        comments:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        author_name:
+          type: string
+          maxLength: 255
+        excerpt:
+          type: string
+        body_markdown:
+          type: string
+        cover_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_featured:
+          type: boolean
+        view_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - body_markdown
+      - category_name
+      - comments
+      - created_at
+      - excerpt
+      - id
+      - slug
+      - title
+      - updated_at
+    PostCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          maxLength: 160
+          pattern: ^[-a-zA-Z0-9_]+$
+      required:
+      - id
+      - name
+      - slug
+    ProviderEnum:
+      enum:
+      - PAYSTACK
+      - PAYPAL
+      type: string
+      description: |-
+        * `PAYSTACK` - Paystack
+        * `PAYPAL` - PayPal
+    Publication:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        author:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        isbn:
+          type: string
+          maxLength: 32
+        language:
+          type: string
+          maxLength: 64
+        cover_image_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        preview_pdf_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        purchase_enquiry_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        is_available:
+          type: boolean
+        is_featured:
+          type: boolean
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - category_name
+      - created_at
+      - description
+      - id
+      - slug
+      - title
+      - updated_at
+    PublicationCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          maxLength: 160
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+      required:
+      - id
+      - name
+      - slug
+    Region:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        continent:
+          type: string
+          maxLength: 64
+        country:
+          type: string
+          maxLength: 100
+        state_or_province:
+          type: string
+          maxLength: 100
+      required:
+      - continent
+      - country
+      - id
+      - state_or_province
+    RoleEnum:
+      enum:
+      - SUPERADMIN
+      - CONTENT_EDITOR
+      - FINANCE_AUDITOR
+      - MODERATOR
+      type: string
+      description: |-
+        * `SUPERADMIN` - Super Administrator
+        * `CONTENT_EDITOR` - Content Editor
+        * `FINANCE_AUDITOR` - Finance Auditor
+        * `MODERATOR` - Comment & Community Moderator
+    Sermon:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        speaker_name:
+          type: string
+          readOnly: true
+        category_name:
+          type: string
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/Status0b2Enum'
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        slug:
+          type: string
+          maxLength: 280
+          pattern: ^[-a-zA-Z0-9_]+$
+        date_preached:
+          type: string
+          format: date
+        summary:
+          type: string
+        scripture_references:
+          type: string
+          maxLength: 255
+        audio_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        video_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        telegram_download_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        thumbnail_url:
+          type: string
+          format: uri
+          maxLength: 1000
+        duration_seconds:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        is_featured:
+          type: boolean
+        view_count:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        updated_by:
+          type: string
+          format: uuid
+          nullable: true
+        speaker:
+          type: string
+          format: uuid
+          nullable: true
+        category:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - category_name
+      - created_at
+      - date_preached
+      - id
+      - slug
+      - speaker_name
+      - title
+      - updated_at
+    SermonCategory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 150
+        slug:
+          type: string
+          maxLength: 160
+          pattern: ^[-a-zA-Z0-9_]+$
+        description:
+          type: string
+      required:
+      - id
+      - name
+      - slug
+    Speaker:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+        bio:
+          type: string
+        portrait_url:
+          type: string
+          format: uri
+          maxLength: 1000
+      required:
+      - id
+      - name
+    Status0b2Enum:
+      enum:
+      - DRAFT
+      - PUBLISHED
+      - ARCHIVED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `PUBLISHED` - Published
+        * `ARCHIVED` - Archived
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        capabilities: {}
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - id
+      - updated_at
+    UserAdminCreateUpdate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        capabilities: {}
+        is_active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+          minLength: 10
+      required:
+      - email
+      - id
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

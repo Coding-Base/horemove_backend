@@ -1,0 +1,213 @@
+================================================================================
+HOREMOW BACKEND PLATFORM — COMPREHENSIVE PROJECT BRIEF & ARCHITECTURE
+================================================================================
+Client: Holiness Revival Movement Worldwide (HOREMOW)
+Technology Stack: Python 3.13 | Django 5.1 | Django REST Framework 3.15
+Database: PostgreSQL (Hosted on Supabase)
+Status: Operational, Tested (18/18 Tests Passing), Zero Bandit Security Issues
+================================================================================
+
+1. PROJECT OVERVIEW & PURPOSE
+--------------------------------------------------------------------------------
+This backend serves as the authoritative, secure REST API and administrative
+engine for Holiness Revival Movement Worldwide (HOREMOW). The platform powers
+the public website and the private administration portal.
+
+Core Responsibilities:
+- Authoritative persistence for sermons, devotionals, events, publications,
+  fellowship locations, and ministry teachings.
+- Publication lifecycle enforcement: drafts and scheduled content are strictly
+  invisible to public visitors until explicitly approved and published.
+- Server-authoritative donation processing with Paystack and PayPal.
+- Automated donor appreciation email dispatch via Resend upon confirmed payment.
+- Append-only security audit ledger tracking all administrative actions.
+- Anti-spam, XSS sanitization, SSRF protection, and rate-limiting across all public inputs.
+
+
+2. SYSTEM ARCHITECTURE & COMPONENT STACK
+--------------------------------------------------------------------------------
+- Runtime: Python 3.13 (64-bit)
+- Framework: Django 5.1 & Django REST Framework 3.15
+- Database: PostgreSQL on Supabase (with SQLite fallback for local unit tests)
+- Authentication: SimpleJWT with short-lived access tokens (15m), rotating refresh
+  tokens (7d), and immediate revocation/blacklisting upon logout.
+- Password Hashing: Argon2 (Argon2PasswordHasher) — memory-hard, GPU-resistant.
+- Email Dispatch: Resend REST API (resend SDK) with Django EmailBackend fallback.
+- Media Storage: Cloudinary API with server-generated signed upload parameters.
+- Payment Gateways: Paystack (HMAC-SHA512 webhooks) & PayPal (REST API).
+- Security Tools: Bandit (AST security audit), Ruff (linter/formatter), Bleach.
+
+
+3. SECURITY ARCHITECTURE (DEFENSE IN DEPTH)
+--------------------------------------------------------------------------------
+a. Zero-Trust API Boundary:
+   - The frontend is considered untrusted. All validation, state transitions,
+     and permission checks occur server-side.
+b. Strict Transport & Headers:
+   - HTTP Strict Transport Security (HSTS) with 1-year preload.
+   - X-Frame-Options: DENY (clickjacking defense).
+   - X-Content-Type-Options: nosniff (MIME sniffing defense).
+   - SameSite=Strict cookies with HttpOnly and Secure flags.
+   - CORS origin allowlists restricted to authorized frontend domains.
+c. Authentication & Identity:
+   - Account Lockout: 3 consecutive failed login attempts lock the account
+     for 15 minutes.
+   - Brute-Force Throttling: Login endpoint throttled to 5 requests/minute.
+d. Financial Integrity & Idempotency:
+   - Server-side checkout initiation creates unique internal transaction records
+     with idempotency keys.
+   - Paystack webhook validates raw payload signature using HMAC-SHA512.
+   - Database row-level locking (select_for_update) inside atomic transactions
+     prevents race conditions from duplicate webhook delivery.
+   - Amount and currency are mathematically verified against internal records
+     before marking transactions SUCCESSFUL.
+e. Donor Appreciation via Resend:
+   - Automated multi-part (HTML & text) email receipts sent via Resend API.
+   - Email headers sanitized against CRLF injection attacks.
+   - Donor email addresses masked in logs (e.g. d*****h@example.com).
+f. Input Sanitization & Abuse Mitigation:
+   - Comments defanged with Bleach (strips scripts and styles entirely).
+   - Comments default to PENDING moderation queue.
+   - Contact forms feature hidden honeypot fields to drop bot scrapers silently.
+   - External media URLs verified against domain whitelists (SSRF defense).
+g. Append-Only Audit Logging:
+   - Every administrative write, role change, content publish, and financial
+     export is permanently logged with actor email, IP address, user agent,
+     and correlation Request-ID.
+
+
+4. BACKEND DIRECTORY STRUCTURE
+--------------------------------------------------------------------------------
+backend/
+├── config/
+│   ├── settings/
+│   │   ├── base.py                 # Core apps, password hashers, JWT, Resend
+│   │   ├── development.py          # Local development overrides & permissive CORS
+│   │   └── production.py           # Strict HSTS, TLS, PostgreSQL enforcement
+│   ├── urls.py                     # Versioned routing (/api/v1/) & Swagger docs
+│   ├── wsgi.py / asgi.py           # Web application servers
+├── apps/
+│   ├── accounts/                   # Custom User model, RBAC, JWT auth endpoints
+│   ├── audit/                      # Append-only audit log & recording utilities
+│   ├── ministry/                   # Profile, doctrinal statements, leaders, home
+│   ├── sermons/                    # Sermons, categories, speakers, Telegram links
+│   ├── devotionals/                # Daily devotionals, scriptures, prayer points
+│   ├── events/                     # Events calendar, timezones, venues, livestreams
+│   ├── publications/               # Books catalog, previews, inquiry URLs
+│   ├── blog/                       # Articles, topics, moderated comments
+│   ├── locations/                  # Hierarchical fellowship directory & contacts
+│   ├── donations/                  # Projects, checkout, webhooks, Resend receipts
+│   ├── contact/                    # Throttled inquiries, honeypot anti-spam
+│   └── media_library/              # Cloudinary signed upload generation
+├── common/
+│   ├── api/
+│   │   ├── exceptions.py           # Standardized JSON error response envelope
+│   │   ├── pagination.py           # Bounded, deterministic server-side pagination
+│   │   └── mixins.py               # AuditedModelViewSetMixin
+│   ├── email/
+│   │   └── service.py              # Resend API client with fallback & sanitization
+│   ├── permissions.py              # Role & capability permission classes
+│   └── validators.py               # SSRF media allowlist & Bleach sanitizers
+├── requirements/
+│   ├── base.txt                    # Production runtime dependencies
+│   ├── development.txt             # Testing & linting tools
+│   └── production.txt              # Production WSGI server (Gunicorn, WhiteNoise)
+├── tests/                          # 18 automated test suites covering all security
+├── manage.py                       # Django CLI utility
+├── pytest.ini                      # Test runner configuration
+└── ruff.toml                       # Code style & linting configuration
+
+
+5. PRIMARY API ENDPOINTS (/api/v1/)
+--------------------------------------------------------------------------------
+Public Endpoints:
+- GET  /api/v1/health/                     # Health check probe
+- GET  /api/v1/ready/                      # DB readiness probe
+- GET  /api/v1/docs/                       # Swagger UI OpenAPI documentation
+- GET  /api/v1/ministry/profile/           # Official ministry profile & history
+- GET  /api/v1/ministry/leaders/           # Leadership profiles
+- GET  /api/v1/ministry/doctrine/          # Doctrinal statements
+- GET  /api/v1/sermons/                    # Paginated sermon archive
+- GET  /api/v1/devotionals/today/          # Today's daily devotional
+- GET  /api/v1/events/?timeframe=upcoming  # Upcoming conferences & programs
+- GET  /api/v1/publications/               # Bookstore publications
+- GET  /api/v1/posts/                      # Blog articles & teachings
+- POST /api/v1/posts/{slug}/comments/      # Submit comment (moderated, rate-limited)
+- GET  /api/v1/locations/                  # Fellowship directory by country/state
+- GET  /api/v1/donations/projects/         # Active giving projects
+- POST /api/v1/donations/checkout/         # Server checkout initialization
+- POST /api/v1/donations/webhooks/paystack/# Paystack HMAC-SHA512 webhook
+- POST /api/v1/donations/webhooks/paypal/  # PayPal webhook handler
+- POST /api/v1/contact/submit/             # Honeypot-shielded contact form
+
+Protected Admin Endpoints (Require Bearer JWT):
+- POST /api/v1/auth/login/                 # Rate-limited admin login
+- POST /api/v1/auth/logout/                # Blacklist refresh token
+- POST /api/v1/auth/refresh/               # Refresh access token
+- GET  /api/v1/auth/me/                    # Current user profile & capabilities
+- CRUD /api/v1/auth/users/                 # SuperAdmin sub-admin management
+- GET  /api/v1/audit/                      # SuperAdmin audit log viewer
+- CRUD /api/v1/sermons/                    # Admin sermon management
+- CRUD /api/v1/devotionals/                # Admin devotional authoring & scheduling
+- CRUD /api/v1/events/                     # Admin event scheduling
+- CRUD /api/v1/publications/               # Admin catalog management
+- CRUD /api/v1/posts/                      # Admin article management
+- POST /api/v1/posts/moderation/comments/{id}/approve/ # Approve comment
+- POST /api/v1/posts/moderation/comments/{id}/reject/  # Reject comment
+- GET  /api/v1/donations/admin/transactions/           # Finance auditor ledger
+- GET  /api/v1/donations/admin/transactions/export/    # Audited CSV export
+- POST /api/v1/media/sign-upload/          # Cloudinary secure upload signatures
+
+
+6. SEEDING & ADMINISTRATIVE SETUP
+--------------------------------------------------------------------------------
+1. Initialize Database Schema:
+   python backend/manage.py migrate
+
+2. Seed Official Ministry Data:
+   python backend/manage.py seed_ministry_data
+   (Seeds official HOREMOW profile, Pastor Paul Rika, Evangelist Linda Paul Rika,
+   foundational doctrines, default categories, and active donation projects).
+
+3. Create Super Administrator:
+   python backend/manage.py create_admin --email admin@horemow.org --password <SECURE_PASSWORD>
+
+
+7. ENVIRONMENT CONFIGURATION REFERENCE (.env)
+--------------------------------------------------------------------------------
+DJANGO_SETTINGS_MODULE=config.settings.development  # or config.settings.production
+DJANGO_SECRET_KEY=<SECURE_RANDOM_SECRET>
+DEBUG=False
+ALLOWED_HOSTS=api.horemow.org,localhost,127.0.0.1
+CORS_ALLOWED_ORIGINS=https://horemow.org,http://localhost:5173
+
+# Database (Supabase PostgreSQL Connection String)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@[HOST]:5432/[DATABASE]
+
+# Resend Transactional Email Service
+RESEND_API_KEY=re_live_api_key_here
+DEFAULT_FROM_EMAIL=Holiness Revival Movement Worldwide <donations@horemow.org>
+
+# Cloudinary Media Library
+CLOUDINARY_CLOUD_NAME=horemow-cloud
+CLOUDINARY_API_KEY=1234567890
+CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz
+
+# Paystack Payment Gateway
+PAYSTACK_SECRET_KEY=sk_live_...
+PAYSTACK_PUBLIC_KEY=pk_live_...
+
+# PayPal Gateway
+PAYPAL_CLIENT_ID=...
+PAYPAL_CLIENT_SECRET=...
+PAYPAL_WEBHOOK_ID=...
+PAYPAL_MODE=live
+
+
+8. QUALITY GATES & CI PIPELINE
+--------------------------------------------------------------------------------
+- Test Suite: 18 / 18 automated tests passing (pytest).
+- Static Security Analysis: 0 vulnerabilities (Bandit).
+- Code Formatting & Linting: Clean passing status (Ruff).
+- CI/CD: Automated GitHub Actions pipeline configured in .github/workflows/backend-ci.yml.
+================================================================================

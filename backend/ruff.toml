@@ -1,0 +1,16 @@
+target-version = "py313"
+line-length = 120
+
+exclude = [
+    "**/migrations/*",
+    ".venv",
+    "venv",
+]
+
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"**/settings/*.py" = ["F403", "F405"]
+"**/tests/*.py" = ["E501"]
