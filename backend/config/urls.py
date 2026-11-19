@@ -28,6 +28,7 @@ api_v1_patterns = [
     path("donations/", include("apps.donations.urls")),
     path("contact/", include("apps.contact.urls")),
     path("media/", include("apps.media_library.urls")),
+    path("analytics/", include("apps.analytics.urls")),
 ]
 
 urlpatterns = [
