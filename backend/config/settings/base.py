@@ -3,6 +3,7 @@ Base settings for HOREMOW backend project.
 """
 
 import os
+import re
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
@@ -96,12 +97,17 @@ def parse_database_url(url_str: str) -> dict:
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / db_path,
         }
-    parsed = urllib.parse.urlparse(url_str)
+    
+    # Strip accidental placeholder brackets around user, password, or host
+    cleaned_url = re.sub(r'//\[([^\]]+)\]:', r'//\1:', url_str)
+    cleaned_url = re.sub(r':\[([^\]]+)\]@', r':\1@', cleaned_url)
+    
+    parsed = urllib.parse.urlparse(cleaned_url)
     return {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": parsed.path.lstrip("/"),
-        "USER": parsed.username or "",
-        "PASSWORD": parsed.password or "",
+        "USER": urllib.parse.unquote(parsed.username or ""),
+        "PASSWORD": urllib.parse.unquote(parsed.password or ""),
         "HOST": parsed.hostname or "",
         "PORT": parsed.port or 5432,
         "CONN_MAX_AGE": 600,
