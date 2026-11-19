@@ -1,5 +1,6 @@
 import pytest
 from apps.accounts.models import User
+from django.core.cache import cache
 from rest_framework.test import APIClient
 
 
@@ -90,3 +91,59 @@ def test_subadmin_provisioning_restricted_to_superadmin():
     client.force_authenticate(user=superadmin)
     res_ok = client.get("/api/v1/auth/users/")
     assert res_ok.status_code == 200
+
+
+@pytest.mark.django_db
+def test_superadmin_registration_requires_valid_auth_code(settings):
+    cache.clear()
+    settings.SUPERADMIN_REGISTRATION_CODE = "SecretSetupPasscode123!"
+    client = APIClient()
+
+    payload = {
+        "email": "director@horemow.org",
+        "password": "StrongPassword2026!",
+        "first_name": "Paul",
+        "last_name": "Rika",
+    }
+
+    # 1. Missing auth_code -> 403 Forbidden
+    res_missing = client.post("/api/v1/auth/register/", payload, format="json")
+    assert res_missing.status_code == 403
+    assert "Invalid authentication code" in res_missing.json()["message"]
+
+    # 2. Wrong auth_code -> 403 Forbidden
+    payload["auth_code"] = "WrongCode"
+    res_wrong = client.post("/api/v1/auth/register/", payload, format="json")
+    assert res_wrong.status_code == 403
+    assert "Invalid authentication code" in res_wrong.json()["message"]
+
+    # 3. Valid auth_code -> 201 Created with tokens & superadmin privileges
+    payload["auth_code"] = "SecretSetupPasscode123!"
+    res_success = client.post("/api/v1/auth/register/", payload, format="json")
+    assert res_success.status_code == 201
+    data = res_success.json()
+    assert data["success"] is True
+    assert "tokens" in data
+    assert data["user"]["email"] == "director@horemow.org"
+    assert data["user"]["role"] == "SUPERADMIN"
+
+    user = User.objects.get(email="director@horemow.org")
+    assert user.is_superuser is True
+    assert user.is_staff is True
+    assert "*" in user.capabilities
+
+
+@pytest.mark.django_db
+def test_superadmin_registration_disabled_when_code_not_set(settings):
+    cache.clear()
+    settings.SUPERADMIN_REGISTRATION_CODE = ""
+    client = APIClient()
+
+    payload = {
+        "email": "director2@horemow.org",
+        "password": "StrongPassword2026!",
+        "auth_code": "SomeAttempt",
+    }
+    res = client.post("/api/v1/auth/register/", payload, format="json")
+    assert res.status_code == 403
+    assert "disabled" in res.json()["message"].lower()

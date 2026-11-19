@@ -1,4 +1,8 @@
+import hmac
+
+from apps.audit.utils import record_audit_log
 from common.permissions import IsSuperAdminUser
+from django.conf import settings
 from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -64,18 +68,49 @@ class MeView(APIView):
 
 class RegisterAdminView(APIView):
     """
-    Allows self-service or initial admin registration.
+    Allows post-deployment SuperAdmin registration, strictly guarded by
+    the secret SUPERADMIN_REGISTRATION_CODE stored in .env.
     """
+
     permission_classes = [AllowAny]
     throttle_classes = [ScopedRateThrottle]
-    throttle_scope = "login"
+    throttle_scope = "register"
 
     def post(self, request):
         email = request.data.get("email", "").strip().lower()
         password = request.data.get("password", "")
         first_name = request.data.get("first_name", "").strip()
         last_name = request.data.get("last_name", "").strip()
-        role = request.data.get("role", "SUPERADMIN").upper()
+        auth_code = str(request.data.get("auth_code", "")).strip()
+
+        expected_code = getattr(settings, "SUPERADMIN_REGISTRATION_CODE", "").strip()
+
+        # Fail-closed: reject if registration code is not configured on server
+        if not expected_code:
+            return Response(
+                {
+                    "success": False,
+                    "message": "SuperAdmin registration is currently disabled on this server.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Constant-time comparison to prevent timing attacks
+        if not auth_code or not hmac.compare_digest(auth_code, expected_code):
+            record_audit_log(
+                action="LOGIN_FAILED",
+                resource_type="SuperAdminRegistration",
+                resource_id=email,
+                request=request,
+                details={"reason": "Invalid or missing registration authentication code"},
+            )
+            return Response(
+                {
+                    "success": False,
+                    "message": "Invalid authentication code. SuperAdmin registration rejected.",
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if not email or "@" not in email:
             return Response(
@@ -95,26 +130,30 @@ class RegisterAdminView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        allowed_roles = ["SUPERADMIN", "CONTENT_EDITOR", "FINANCE_AUDITOR", "MODERATOR"]
-        if role not in allowed_roles:
-            role = "SUPERADMIN"
-
         user = User.objects.create_user(
             email=email,
             password=password,
             first_name=first_name,
             last_name=last_name,
-            role=role,
+            role="SUPERADMIN",
             is_staff=True,
-            is_superuser=(role == "SUPERADMIN"),
-            capabilities=["*"] if role == "SUPERADMIN" else ["content:read", "content:write"],
+            is_superuser=True,
+            capabilities=["*"],
+        )
+
+        record_audit_log(
+            action="CREATE",
+            resource_type="User",
+            resource_id=str(user.id),
+            request=request,
+            details={"email": user.email, "role": user.role, "registration_method": "auth_code"},
         )
 
         refresh = RefreshToken.for_user(user)
         return Response(
             {
                 "success": True,
-                "message": "Admin account created successfully.",
+                "message": "SuperAdmin account created successfully.",
                 "user": UserSerializer(user).data,
                 "tokens": {
                     "access": str(refresh.access_token),

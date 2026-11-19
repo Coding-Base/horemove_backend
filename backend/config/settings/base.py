@@ -158,6 +158,7 @@ REST_FRAMEWORK = {
         "anon": "100/minute",
         "user": "300/minute",
         "login": "5/minute",
+        "register": "10/minute",
         "contact": "5/hour",
         "comments": "3/hour",
     },
@@ -201,6 +202,9 @@ PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "client_id_placeholder")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "client_secret_placeholder")
 PAYPAL_WEBHOOK_ID = os.getenv("PAYPAL_WEBHOOK_ID", "webhook_id_placeholder")
 PAYPAL_MODE = os.getenv("PAYPAL_MODE", "sandbox")
+
+# Admin Setup Authentication Code
+SUPERADMIN_REGISTRATION_CODE = os.getenv("SUPERADMIN_REGISTRATION_CODE", "")
 
 # Email Settings (Resend + Fallback)
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
