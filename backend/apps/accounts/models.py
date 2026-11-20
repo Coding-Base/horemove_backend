@@ -70,6 +70,13 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.email} ({self.get_role_display()})"
 
+    def get_full_name(self) -> str:
+        full = f"{self.first_name} {self.last_name}".strip()
+        return full or self.email
+
+    def get_short_name(self) -> str:
+        return self.first_name or self.email
+
     @property
     def is_locked(self) -> bool:
         if self.locked_until and self.locked_until > timezone.now():

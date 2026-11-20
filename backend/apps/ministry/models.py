@@ -15,6 +15,10 @@ class MinistryProfile(models.Model):
     primary_phone = models.CharField(max_length=64, blank=True)
     primary_email = models.EmailField(blank=True)
     social_links = models.JSONField(default=dict, blank=True)
+    email_settings = models.JSONField(default=dict, blank=True)
+    seo_settings = models.JSONField(default=dict, blank=True)
+    styling_settings = models.JSONField(default=dict, blank=True)
+    gathering_times = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -25,3 +25,18 @@ class Event(PublishableModel):
 
     def __str__(self):
         return f"{self.title} ({self.start_datetime.strftime('%Y-%m-%d')})"
+
+
+class HomepageAnnouncement(models.Model):
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    enabled = models.BooleanField(default=False)
+    eyebrow = models.CharField(max_length=100, default="Latest update")
+    title = models.CharField(max_length=255, blank=True)
+    message = models.TextField(blank=True)
+    image_url = models.URLField(max_length=1000, blank=True)
+    action_label = models.CharField(max_length=100, blank=True)
+    action_url = models.CharField(max_length=1000, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Homepage announcement"

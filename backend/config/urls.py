@@ -3,6 +3,7 @@ URL Configuration for HOREMOW backend.
 All APIs are versioned under /api/v1/
 """
 
+from apps.ministry.views import SitemapXmlView
 from common.views import health_check, readiness_check
 from django.contrib import admin
 from django.urls import include, path
@@ -32,6 +33,8 @@ api_v1_patterns = [
 ]
 
 urlpatterns = [
+    # SEO XML Sitemap
+    path("sitemap.xml", SitemapXmlView.as_view(), name="root-sitemap"),
     # Private Django Admin (can be customized/disabled or mapped to a secure path)
     path("control-panel/", admin.site.urls),
     # REST API v1

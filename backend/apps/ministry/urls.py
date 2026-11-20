@@ -6,6 +6,7 @@ from .views import (
     HomepageSectionViewSet,
     LeaderViewSet,
     MinistryProfileView,
+    SitemapXmlView,
 )
 
 router = DefaultRouter()
@@ -15,5 +16,6 @@ router.register(r"homepage-sections", HomepageSectionViewSet, basename="homepage
 
 urlpatterns = [
     path("profile/", MinistryProfileView.as_view(), name="ministry-profile"),
+    path("sitemap.xml", SitemapXmlView.as_view(), name="ministry-sitemap"),
     path("", include(router.urls)),
 ]

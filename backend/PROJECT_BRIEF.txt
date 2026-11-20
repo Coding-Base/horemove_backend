@@ -18,6 +18,10 @@ Core Responsibilities:
   fellowship locations, and ministry teachings.
 - Publication lifecycle enforcement: drafts and scheduled content are strictly
   invisible to public visitors until explicitly approved and published.
+- High-throughput bulk devotional ingestion & AI multimodal OCR engine capable of
+  ingesting full 6-month / annual volumes (up to 500 MB) from scanned publications.
+- Automated daily devotional scheduler with configurable timezone (e.g. Africa/Lagos)
+  and automated draft-to-published transition.
 - Server-authoritative donation processing with Paystack and PayPal.
 - Automated donor appreciation email dispatch via Resend upon confirmed payment.
 - Append-only security audit ledger tracking all administrative actions.
@@ -30,8 +34,14 @@ Core Responsibilities:
 - Framework: Django 5.1 & Django REST Framework 3.15
 - Database: PostgreSQL on Supabase (with SQLite fallback for local unit tests)
 - Authentication: SimpleJWT with short-lived access tokens (15m), rotating refresh
-  tokens (7d), and immediate revocation/blacklisting upon logout.
+  tokens (7d), and immediate revocation/blacklisting upon logout. Custom User
+  model fully supports standard auth contracts (get_full_name, get_short_name).
 - Password Hashing: Argon2 (Argon2PasswordHasher) — memory-hard, GPU-resistant.
+- Multimodal AI Document Processing:
+  - High-performance PDF renderer: pypdfium2 (C++ Pdfium wrapper, in-memory JPEG compression).
+  - Multi-provider AI Vision: Google Gemini (google-genai / google-generativeai),
+    OpenAI (GPT-4o), Anthropic (Claude 3.5), and OpenAI-compatible Vision API endpoints
+    (Mistral Pixtral, Meta Llama 3.2 Vision, Alibaba Qwen 2.5 VL).
 - Email Dispatch: Resend REST API (resend SDK) with Django EmailBackend fallback.
 - Media Storage: Cloudinary API with server-generated signed upload parameters.
 - Payment Gateways: Paystack (HMAC-SHA512 webhooks) & PayPal (REST API).
@@ -91,7 +101,8 @@ backend/
 │   ├── audit/                      # Append-only audit log & recording utilities
 │   ├── ministry/                   # Profile, doctrinal statements, leaders, home
 │   ├── sermons/                    # Sermons, categories, speakers, Telegram links
-│   ├── devotionals/                # Daily devotionals, scriptures, prayer points
+│   ├── devotionals/                # Daily devotionals, scriptures, prayer points,
+│   │                               # multimodal OCR parser, batch processor & auto-publish scheduler
 │   ├── events/                     # Events calendar, timezones, venues, livestreams
 │   ├── publications/               # Books catalog, previews, inquiry URLs
 │   ├── blog/                       # Articles, topics, moderated comments
@@ -129,6 +140,7 @@ Public Endpoints:
 - GET  /api/v1/ministry/doctrine/          # Doctrinal statements
 - GET  /api/v1/sermons/                    # Paginated sermon archive
 - GET  /api/v1/devotionals/today/          # Today's daily devotional
+- GET  /api/v1/devotionals/calendar/       # Month-level devotional calendar schedule
 - GET  /api/v1/events/?timeframe=upcoming  # Upcoming conferences & programs
 - GET  /api/v1/publications/               # Bookstore publications
 - GET  /api/v1/posts/                      # Blog articles & teachings
@@ -149,6 +161,14 @@ Protected Admin Endpoints (Require Bearer JWT):
 - GET  /api/v1/audit/                      # SuperAdmin audit log viewer
 - CRUD /api/v1/sermons/                    # Admin sermon management
 - CRUD /api/v1/devotionals/                # Admin devotional authoring & scheduling
+- POST /api/v1/devotionals/batches/upload/ # Ingest bulk PDF volume (up to 500 MB)
+- GET  /api/v1/devotionals/batches/        # List ingestion batches & OCR progress
+- GET  /api/v1/devotionals/batches/{id}/   # Detailed batch status & parsed daily entries
+- POST /api/v1/devotionals/batches/{id}/confirm/ # Import parsed batch into drafts
+- DELETE /api/v1/devotionals/batches/{id}/ # Delete batch and uncommitted entries
+- GET  /api/v1/devotionals/auto-publish-settings/ # Get auto-publish & OCR configuration
+- PUT  /api/v1/devotionals/auto-publish-settings/ # Update auto-publish time & OCR engine
+- GET  /api/v1/devotionals/ai-models/      # Catalog of Top 10 supported AI Vision models
 - CRUD /api/v1/events/                     # Admin event scheduling
 - CRUD /api/v1/publications/               # Admin catalog management
 - CRUD /api/v1/posts/                      # Admin article management
@@ -203,6 +223,13 @@ PAYPAL_CLIENT_SECRET=...
 PAYPAL_WEBHOOK_ID=...
 PAYPAL_MODE=live
 
+# Multimodal AI Vision OCR (Scanned Publication PDF Ingestion)
+GEMINI_API_KEY=AIzaSy...              # Default Google Gemini Vision API Key
+OPENAI_API_KEY=sk-...                 # Optional OpenAI Vision Key (GPT-4o)
+ANTHROPIC_API_KEY=sk-ant-...          # Optional Anthropic Claude 3.5 Key
+MISTRAL_API_KEY=...                   # Optional Mistral Pixtral Key
+OPENROUTER_API_KEY=...                # Optional OpenRouter Gateway (Llama 3.2, Qwen 2.5)
+
 
 8. QUALITY GATES & CI PIPELINE
 --------------------------------------------------------------------------------
@@ -210,4 +237,49 @@ PAYPAL_MODE=live
 - Static Security Analysis: 0 vulnerabilities (Bandit).
 - Code Formatting & Linting: Clean passing status (Ruff).
 - CI/CD: Automated GitHub Actions pipeline configured in .github/workflows/backend-ci.yml.
+
+
+9. DEVOTIONAL INGESTION & MULTIMODAL AI VISION OCR ENGINE
+--------------------------------------------------------------------------------
+Architecture & Capabilities:
+- High-Throughput Bulk Ingestion:
+  - System configured for large publication volumes (e.g. 6-month or 1-year devotional books).
+  - Maximum upload size: 500 MB (DATA_UPLOAD_MAX_MEMORY_SIZE = 500MB).
+  - Memory-safe buffering: FILE_UPLOAD_MAX_MEMORY_SIZE set to 10 MB to prevent RAM exhaustion
+    by spooling large uploads directly to temporary disk storage.
+- Intelligent Hybrid PDF Routing:
+  - Digital Text Detection: Scans pages with pdfplumber / pypdf.
+  - Hybrid Publication Protection: If preliminary pages (preface, index, copyright) contain text
+    but the main daily body consists of scanned curved pages with zero character layers,
+    the parser automatically routes pages to the Multimodal AI Vision engine.
+- High-Performance Page Rendering:
+  - Powered by pypdfium2 (C++ Pdfium engine). Renders pages in-memory to compressed JPEGs
+    at ~0.24 seconds per page (~145 KB per image), eliminating disk thrashing.
+- Multi-Provider AI Vision Support (Top 10 Models):
+  - Google:
+    * gemini-3.1-flash-lite-preview (Default, fast, highly accurate for scanned print)
+    * gemini-2.5-flash (High speed & long context)
+    * gemini-2.5-pro (Complex multi-column layouts)
+  - OpenAI:
+    * gpt-4o (Omni Vision, next-gen multimodal comprehension)
+    * gpt-4o-mini (Fast & cost-efficient vision)
+  - Anthropic:
+    * claude-3-5-sonnet (Superior layout extraction)
+    * claude-3-5-haiku (Ultra-fast document analysis)
+  - Open-Weights & Multilingual:
+    * meta-llama/llama-3.2-11b-vision-instruct (SOTA open-weights vision)
+    * mistralai/pixtral-12b (High-resolution document OCR)
+    * qwen/qwen-2.5-vl-72b-instruct (Advanced visual reasoning)
+- Strict HOREMOW Daily Devotional Schema Extraction:
+  - Automatically extracts: Date, Scripture Reading, Thought for the Day, Key Verse,
+    Key Verse Text, Hymn Name, Hymn Stanzas, Main Exhortation Content, and Prayer Points.
+- Resilient Batch Architecture:
+  - Page-by-page progress reporting (total_pages, processed_pages).
+  - Automatic boundary filtering: start_page and end_page controls to exclude preliminaries & directories.
+  - Exponential backoff retry against upstream API rate limits (503 / 429).
+  - Multi-page stitching for long daily devotionals spanning multiple pages.
+- Automated Daily Publishing:
+  - Timezone-aware daily scheduler (e.g., Africa/Lagos WAT UTC+1).
+  - Auto-promotes verified drafts to PUBLISHED status at configured local time.
+  - Configurable card template (Classic HOREMOW Deep Navy, Regal Gold, Pure Minimalist).
 ================================================================================
