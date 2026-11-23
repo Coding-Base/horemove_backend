@@ -5,6 +5,8 @@ All APIs are versioned under /api/v1/
 
 from apps.ministry.views import SitemapXmlView
 from common.views import health_check, readiness_check
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
@@ -40,6 +42,9 @@ urlpatterns = [
     # REST API v1
     path("api/v1/", include(api_v1_patterns)),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 handler404 = "common.views.custom_404_view"
 handler500 = "common.views.custom_500_view"
