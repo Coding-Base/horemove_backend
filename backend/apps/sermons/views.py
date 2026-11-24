@@ -1,9 +1,74 @@
 from common.permissions import IsAdminOrReadOnly
 from django.db.models import Q
-from rest_framework import filters, viewsets
+from rest_framework import filters, status, viewsets
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import Sermon, SermonCategory, Speaker
 from .serializers import SermonCategorySerializer, SermonSerializer, SpeakerSerializer
+from .supabase_storage import upload_sermon_audio
+
+
+class SermonAudioUploadView(APIView):
+    """
+    Receives an uploaded audio file (mp3, wav, m4a, etc.),
+    uploads directly to Supabase Storage ('sermons' bucket),
+    and returns the public CDN streaming URL.
+    """
+    parser_classes = [MultiPartParser, FormParser]
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        file_obj = request.FILES.get("file") or request.FILES.get("audio")
+        if not file_obj:
+            return Response(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "NO_FILE_PROVIDED",
+                        "message": "Please attach a valid audio file (e.g. MP3, M4A, WAV).",
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 200MB size limit for audio
+        if file_obj.size > 209715200:
+            return Response(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "FILE_TOO_LARGE",
+                        "message": "The uploaded audio exceeds the maximum file size limit of 200MB.",
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = upload_sermon_audio(file_obj, original_name=file_obj.name)
+            if result.get("public_url") and result["public_url"].startswith("/"):
+                result["public_url"] = request.build_absolute_uri(result["public_url"])
+            return Response(
+                {
+                    "success": True,
+                    "data": result,
+                },
+                status=status.HTTP_201_CREATED if result.get("success") else status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {
+                    "success": False,
+                    "error": {
+                        "code": "UPLOAD_FAILED",
+                        "message": f"An error occurred while uploading audio: {str(e)}",
+                    },
+                },
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
 class SermonCategoryViewSet(viewsets.ModelViewSet):
