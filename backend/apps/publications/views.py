@@ -102,21 +102,32 @@ class PublicationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user and user.is_authenticated and user.is_staff:
+        if user and user.is_authenticated and (getattr(user, "is_staff", False) or getattr(user, "role", "") in ("SUPERADMIN", "CONTENT_EDITOR")):
             queryset = Publication.objects.all()
         else:
             queryset = Publication.objects.published()
 
         category = self.request.query_params.get("category")
-        if category:
-            queryset = queryset.filter(category__slug=category)
+        if category and category.upper() != "ALL":
+            queryset = queryset.filter(category__name__iexact=category) | queryset.filter(category__slug=category)
 
         language = self.request.query_params.get("language")
         if language:
-            queryset = queryset.filter(language__iexact=language)
+            queryset = queryset.filter(language__icontains=language)
 
         is_featured = self.request.query_params.get("featured")
         if is_featured is not None:
             queryset = queryset.filter(is_featured=is_featured.lower() == "true")
 
         return queryset.select_related("category")
+
+    def get_object(self):
+        queryset = self.filter_queryset(self.get_queryset())
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        lookup_value = self.kwargs.get(lookup_url_kwarg)
+        import uuid
+        try:
+            uuid.UUID(str(lookup_value))
+            return queryset.get(id=lookup_value)
+        except (ValueError, AttributeError):
+            return queryset.get(slug=lookup_value)

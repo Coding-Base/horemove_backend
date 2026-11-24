@@ -23,12 +23,12 @@ class DonationProjectSerializer(serializers.ModelSerializer):
 class DonationCheckoutSerializer(serializers.Serializer):
     project_id = serializers.UUIDField(required=False, allow_null=True)
     amount = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("1.00"))
-    currency = serializers.ChoiceField(choices=["NGN", "USD", "GBP", "EUR"], default="NGN")
+    currency = serializers.ChoiceField(choices=["NGN", "USD", "GBP", "EUR", "CAD"], default="NGN")
     donor_name = serializers.CharField(max_length=255)
     donor_email = serializers.EmailField()
     donor_phone = serializers.CharField(max_length=64, required=False, allow_blank=True)
     is_anonymous = serializers.BooleanField(default=False)
-    provider = serializers.ChoiceField(choices=["PAYSTACK", "PAYPAL"])
+    provider = serializers.ChoiceField(choices=["PAYSTACK", "FLUTTERWAVE", "PAYPAL"])
 
     def validate_donor_email(self, value):
         email = value.strip().lower()

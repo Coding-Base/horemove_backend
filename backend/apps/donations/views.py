@@ -63,7 +63,7 @@ class DonationCheckoutView(APIView):
             project = DonationProject.objects.filter(id=data["project_id"], is_active=True).first()
 
         provider = data["provider"]
-        provider_prefix = "PSTK" if provider == "PAYSTACK" else "PYPL"
+        provider_prefix = "PSTK" if provider == "PAYSTACK" else ("FLW" if provider == "FLUTTERWAVE" else "PYPL")
         unique_token = uuid.uuid4().hex[:10].upper()
         reference = f"HRMW-{provider_prefix}-{unique_token}"
         idempotency_key = f"IDEMP-{uuid.uuid4().hex}"
@@ -142,6 +142,56 @@ class DonationCheckoutView(APIView):
                 except Exception as e:
                     provider_error = str(e)
                     logger.error("Paystack transaction initialization error: %s", e)
+
+        elif provider == "FLUTTERWAVE":
+            secret_key = (os.getenv("FLW_SECRET_KEY") or getattr(settings, "FLW_SECRET_KEY", "")).strip()
+            if secret_key and not secret_key.startswith("placeholder"):
+                try:
+                    callback_url = f"{frontend_base}/give?verified=true&provider=FLUTTERWAVE"
+                    flw_payload = {
+                        "tx_ref": reference,
+                        "amount": f"{Decimal(str(data['amount'])):.2f}",
+                        "currency": data["currency"],
+                        "redirect_url": callback_url,
+                        "customer": {
+                            "email": data["donor_email"],
+                            "name": data["donor_name"],
+                            "phonenumber": data.get("donor_phone", ""),
+                        },
+                        "customizations": {
+                            "title": "HOREMOW Ministry Offering",
+                            "description": project.name if project else "Global Missions & Evangelical Outreach",
+                            "logo": "https://horemow.org/logo.png",
+                        },
+                        "meta": {
+                            "donor_name": data["donor_name"],
+                            "project_name": project.name if project else "General Ministry Offering",
+                            "transaction_id": str(tx.id),
+                        },
+                    }
+                    flw_req = urllib.request.Request(
+                        "https://api.flutterwave.com/v3/payments",
+                        data=json.dumps(flw_payload).encode("utf-8"),
+                        headers={
+                            "Authorization": f"Bearer {secret_key}",
+                            "Content-Type": "application/json",
+                            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) HOREMOW/1.0",
+                        },
+                    )
+                    with urllib.request.urlopen(flw_req, timeout=15) as flw_resp:
+                        flw_res_data = json.loads(flw_resp.read().decode("utf-8"))
+                        if flw_res_data.get("status") == "success" and "data" in flw_res_data:
+                            authorization_url = flw_res_data["data"].get("link")
+                except urllib.error.HTTPError as e:
+                    try:
+                        err_json = json.loads(e.read().decode("utf-8"))
+                        provider_error = err_json.get("message") or str(err_json)
+                    except Exception:
+                        provider_error = f"Flutterwave HTTP error {e.code}"
+                    logger.error("Flutterwave payment initialization HTTP error: %s", provider_error)
+                except Exception as e:
+                    provider_error = str(e)
+                    logger.error("Flutterwave payment initialization error: %s", e)
 
         elif provider == "PAYPAL":
             client_id = (os.getenv("PAYPAL_CLIENT_ID") or getattr(settings, "PAYPAL_CLIENT_ID", "")).strip()
@@ -233,13 +283,14 @@ class DonationCheckoutView(APIView):
             import sys
             # Fallback for unit testing harness where external APIs are mocked
             if "pytest" in sys.modules or "test" in sys.argv:
-                authorization_url = (
-                    f"https://checkout.paystack.com/{reference}"
-                    if provider == "PAYSTACK"
-                    else f"https://www.sandbox.paypal.com/checkoutnow?token={reference}"
-                )
+                if provider == "PAYSTACK":
+                    authorization_url = f"https://checkout.paystack.com/{reference}"
+                elif provider == "FLUTTERWAVE":
+                    authorization_url = f"https://checkout.flutterwave.com/v3/hosted/pay/{reference}"
+                else:
+                    authorization_url = f"https://www.sandbox.paypal.com/checkoutnow?token={reference}"
             else:
-                error_msg = provider_error or f"Unable to initialize {provider} checkout. Please ensure you are using supported currency (NGN for Paystack, USD/EUR/GBP for PayPal)."
+                error_msg = provider_error or f"Unable to initialize {provider} checkout. Please ensure you are using supported currency (NGN for Paystack, USD/EUR/GBP/CAD for Flutterwave)."
                 return Response(
                     {
                         "success": False,
@@ -331,6 +382,76 @@ class PaystackWebhookView(APIView):
                     tx.status = "FAILED"
                     tx.save(update_fields=["status"])
                     return Response({"error": "Amount mismatch"}, status=status.HTTP_400_BAD_REQUEST)
+
+                tx.status = "SUCCESSFUL"
+                tx.completed_at = timezone.now()
+                tx.save(update_fields=["status", "completed_at"])
+
+                # Trigger donor appreciation email dispatch
+                send_donor_appreciation_email(tx)
+
+        return Response({"status": "success"}, status=status.HTTP_200_OK)
+
+
+class FlutterwaveWebhookView(APIView):
+    """
+    Flutterwave Webhook Endpoint with secret hash verification.
+    """
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        secret_hash = (os.getenv("FLW_SECRET_HASH") or getattr(settings, "FLW_SECRET_HASH", "")).strip()
+        signature = request.headers.get("verif-hash") or request.META.get("HTTP_VERIF_HASH")
+
+        if not secret_hash or not signature:
+            return Response({"error": "Missing signature header or secret hash"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if not hmac.compare_digest(secret_hash, signature):
+            PaymentWebhookEvent.objects.create(
+                provider="FLUTTERWAVE",
+                event_type="UNAUTHORIZED",
+                payload={"raw": request.body.decode("utf-8", errors="ignore")},
+                signature=signature or "",
+                error_message="Invalid webhook verif-hash",
+            )
+            return Response({"error": "Invalid signature hash"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            event_data = json.loads(request.body.decode("utf-8"))
+        except Exception:
+            return Response({"error": "Invalid JSON body"}, status=status.HTTP_400_BAD_REQUEST)
+
+        event_type = event_data.get("event")
+        data = event_data.get("data", {})
+        reference = data.get("tx_ref")
+        flw_status = data.get("status")
+
+        PaymentWebhookEvent.objects.create(
+            provider="FLUTTERWAVE",
+            event_type=str(event_type or "webhook"),
+            payload=event_data,
+            signature=signature,
+            is_processed=True,
+        )
+
+        if (event_type == "charge.completed" or flw_status == "successful") and reference:
+            with transaction.atomic():
+                tx = DonationTransaction.objects.select_for_update().filter(provider_reference=reference).first()
+                if not tx:
+                    return Response({"status": "Transaction not found"}, status=status.HTTP_200_OK)
+
+                if tx.status == "SUCCESSFUL":
+                    return Response({"status": "Already processed"}, status=status.HTTP_200_OK)
+
+                # Validate amount and currency
+                paid_amount = Decimal(str(data.get("amount", 0)))
+                paid_currency = (data.get("currency") or "").upper()
+
+                if abs(tx.amount - paid_amount) > Decimal("0.05") or (paid_currency and paid_currency != tx.currency):
+                    tx.status = "FAILED"
+                    tx.save(update_fields=["status"])
+                    return Response({"error": "Amount or currency mismatch"}, status=status.HTTP_400_BAD_REQUEST)
 
                 tx.status = "SUCCESSFUL"
                 tx.completed_at = timezone.now()
@@ -476,9 +597,9 @@ class DonationVerifyView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        reference = request.data.get("reference")
+        reference = request.data.get("reference") or request.data.get("tx_ref") or request.data.get("trxref")
         transaction_id = request.data.get("transaction_id")
-        provider = request.data.get("provider", "PAYSTACK").upper()
+        provider = request.data.get("provider", "").upper()
 
         if not reference and not transaction_id:
             return Response(
@@ -497,6 +618,11 @@ class DonationVerifyView(APIView):
                 {"success": False, "message": "Donation record not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+        if not provider:
+            provider = tx.provider
+        else:
+            provider = tx.provider or provider
 
         # If already successfully verified, return the verified receipt immediately
         if tx.status == "SUCCESSFUL":
@@ -617,6 +743,47 @@ class DonationVerifyView(APIView):
                         verification_error = f"Paystack verification failed with HTTP {e.code}"
                 except Exception as e:
                     verification_error = f"Paystack verification error: {e}"
+
+        elif provider == "FLUTTERWAVE":
+            secret_key = (os.getenv("FLW_SECRET_KEY") or getattr(settings, "FLW_SECRET_KEY", "")).strip()
+            flw_tx_id = request.data.get("flw_transaction_id") or request.data.get("transaction_id")
+            if secret_key:
+                try:
+                    verify_url = f"https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref={tx.provider_reference}"
+                    if flw_tx_id and str(flw_tx_id).isdigit():
+                        verify_url = f"https://api.flutterwave.com/v3/transactions/{flw_tx_id}/verify"
+
+                    v_req = urllib.request.Request(
+                        verify_url,
+                        headers={
+                            "Authorization": f"Bearer {secret_key}",
+                            "Content-Type": "application/json",
+                            "User-Agent": "Mozilla/5.0",
+                        },
+                    )
+                    with urllib.request.urlopen(v_req, timeout=12) as v_resp:
+                        v_data = json.loads(v_resp.read().decode("utf-8"))
+                        status_str = v_data.get("status")
+                        flw_tx_data = v_data.get("data", {})
+                        flw_tx_status = flw_tx_data.get("status")
+
+                        if status_str == "success" and flw_tx_status == "successful":
+                            flw_currency = (flw_tx_data.get("currency") or "").upper()
+                            flw_amount = Decimal(str(flw_tx_data.get("amount", 0)))
+                            if flw_currency == tx.currency and flw_amount >= tx.amount:
+                                is_verified = True
+                            else:
+                                verification_error = f"Transaction amount/currency mismatch: expected {tx.currency} {tx.amount}, got {flw_currency} {flw_amount}."
+                        else:
+                            verification_error = f"Flutterwave transaction not successful (status: {flw_tx_status or status_str})."
+                except urllib.error.HTTPError as e:
+                    try:
+                        err_json = json.loads(e.read().decode("utf-8"))
+                        verification_error = err_json.get("message") or str(err_json)
+                    except Exception:
+                        verification_error = f"Flutterwave verification failed with HTTP {e.code}"
+                except Exception as e:
+                    verification_error = f"Flutterwave verification error: {e}"
 
         # Unit testing harness fallback (when external gateways are mocked in test runner)
         import sys

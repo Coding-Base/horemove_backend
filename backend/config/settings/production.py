@@ -10,12 +10,31 @@ from .base import *
 SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = False
 
-ALLOWED_HOSTS = [host.strip() for host in os.environ["ALLOWED_HOSTS"].split(",") if host.strip()]
+raw_hosts = os.environ.get("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = [host.strip() for host in raw_hosts.split(",") if host.strip()]
+
+# Auto-detect Render external hostname and allow onrender.com subdomains
+render_external_hostname = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if render_external_hostname and render_external_hostname not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(render_external_hostname)
+
+# Always allow .onrender.com wildcards on Render deployments
+if os.environ.get("RENDER") or any("onrender.com" in h for h in ALLOWED_HOSTS) or not ALLOWED_HOSTS:
+    if ".onrender.com" not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(".onrender.com")
 
 # Strict CORS Allowlist
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in os.environ["CORS_ALLOWED_ORIGINS"].split(",") if origin.strip()]
+raw_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
 CORS_ALLOW_CREDENTIALS = True
+
+# CSRF Trusted Origins (required for Django 4+ HTTPS requests)
+raw_csrf = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in raw_csrf.split(",") if origin.strip()]
+for origin in CORS_ALLOWED_ORIGINS:
+    if origin.startswith("http") and origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(origin)
 
 # Production Database must be PostgreSQL
 if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":

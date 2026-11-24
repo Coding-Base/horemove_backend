@@ -10,7 +10,15 @@ class IsAdminOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
-        return bool(request.user and request.user.is_authenticated and request.user.is_staff)
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                getattr(request.user, "is_staff", False)
+                or getattr(request.user, "is_superuser", False)
+                or getattr(request.user, "role", "") in ("SUPERADMIN", "CONTENT_EDITOR")
+            )
+        )
 
 
 class HasCapability(permissions.BasePermission):

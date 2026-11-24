@@ -25,6 +25,7 @@ class DonationProject(models.Model):
 class DonationTransaction(models.Model):
     PROVIDER_CHOICES = [
         ("PAYSTACK", "Paystack"),
+        ("FLUTTERWAVE", "Flutterwave"),
         ("PAYPAL", "PayPal"),
     ]
 

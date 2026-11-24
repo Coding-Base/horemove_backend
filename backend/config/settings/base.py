@@ -208,9 +208,13 @@ CLOUDINARY_CONFIG = {
     "api_secret": os.getenv("CLOUDINARY_API_SECRET", ""),
 }
 
-# Paystack & PayPal Configuration
+# Paystack, Flutterwave & PayPal Configuration
 PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "sk_test_placeholder")
 PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY", "pk_test_placeholder")
+
+FLW_PUBLIC_KEY = os.getenv("FLW_PUBLIC_KEY", "")
+FLW_SECRET_KEY = os.getenv("FLW_SECRET_KEY", "")
+FLW_SECRET_HASH = os.getenv("FLW_SECRET_HASH", "")
 
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID", "client_id_placeholder")
 PAYPAL_CLIENT_SECRET = os.getenv("PAYPAL_CLIENT_SECRET", "client_secret_placeholder")
