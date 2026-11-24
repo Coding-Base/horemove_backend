@@ -8,7 +8,8 @@ from common.views import health_check, readiness_check
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 api_v1_patterns = [
@@ -43,8 +44,10 @@ urlpatterns = [
     path("api/v1/", include(api_v1_patterns)),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Ensure uploaded media files (such as local fallback publication PDFs) can be served in production
+urlpatterns += [
+    re_path(r"^media/(?P<path>.*)$", serve, {"document_root": settings.MEDIA_ROOT}),
+]
 
 handler404 = "common.views.custom_404_view"
 handler500 = "common.views.custom_500_view"
